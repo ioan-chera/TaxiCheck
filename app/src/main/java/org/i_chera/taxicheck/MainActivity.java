@@ -1,7 +1,9 @@
 package org.i_chera.taxicheck;
 
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -21,6 +23,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.IOException;
+
 public class MainActivity extends AppCompatActivity
 {
     private static final String TAG = "MainActivity";
@@ -33,6 +37,20 @@ public class MainActivity extends AppCompatActivity
     private static final int DATE_SIZE = 8;
     private static final int PDF_LINK_SIZE = PDF_LINK_BASE.length() + DATE_SIZE + ".pdf".length();
 
+    private PdfParseTask mPdfTask;
+
+    private static boolean sAppStuffInit;
+
+    /**
+     * Initializes per-app settings
+     */
+    private static void initAppStuff(Context context)
+    {
+        if(sAppStuffInit)
+            return;
+        sAppStuffInit = true;
+    }
+
     /**
      * On creation, setup the interface
      * @param savedInstanceState
@@ -41,6 +59,8 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+        initAppStuff(this);
+
         setContentView(R.layout.activity_main);
 
         Button updateDataButton = findViewById(R.id.button_update_data);
@@ -52,6 +72,14 @@ public class MainActivity extends AppCompatActivity
                 updateData();
             }
         });
+    }
+
+    @Override
+    protected void onDestroy()
+    {
+        super.onDestroy();
+        if(mPdfTask != null)
+            mPdfTask.cancel(true);
     }
 
     /**
@@ -77,6 +105,8 @@ public class MainActivity extends AppCompatActivity
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
         startActivity(intent);
     }
+
+
 
     /**
      * Handles HTML cityhall data.
@@ -115,7 +145,11 @@ public class MainActivity extends AppCompatActivity
             showToast(R.string.could_not_find_links);
             return;
         }
-        loadLink(PMB_HOME + correctLink);
+
+        String link = PMB_HOME + correctLink;
+        if(mPdfTask == null)
+            mPdfTask = new PdfParseTask();
+        mPdfTask.execute(link);
     }
 
     /**
@@ -140,5 +174,35 @@ public class MainActivity extends AppCompatActivity
             }
         });
         queue.add(request);
+    }
+
+    /**
+     * Parses the remote PDF
+     */
+    private class PdfParseTask extends AsyncTask<String, Void, String>
+    {
+        @Override
+        protected String doInBackground(String... params)
+        {
+            try
+            {
+                String result = Utility.parsePdfFromUrl(params[0]);
+                return result;
+            }
+            catch(IOException e)
+            {
+                Log.w(TAG, "Error getting PDF: " + e.getMessage());
+                return null;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String result)
+        {
+            if(result != null)
+                Log.i(TAG, result);
+            else
+                showToast(R.string.could_not_parse_pdf);
+        }
     }
 }
