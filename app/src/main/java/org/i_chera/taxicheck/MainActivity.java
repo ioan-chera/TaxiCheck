@@ -25,10 +25,11 @@ public class MainActivity extends AppCompatActivity
 {
     private static final String TAG = "MainActivity";
 
+    private static final String PMB_HOME = "http://www.pmb.ro";
     private static final String PMB_WEBSITE =
-            "http://www.pmb.ro/adrese_utile/transport_urban/autorizatii_taxi/autorizatii_TAXI.php";
+            PMB_HOME + "/adrese_utile/transport_urban/autorizatii_taxi/autorizatii_TAXI.php";
     private static final String PDF_LINK_BASE =
-            "http://www.pmb.ro/adrese_utile/transport_urban/autorizatii_taxi/doc/situatia_autorizatiilor_taxi_";
+            "/adrese_utile/transport_urban/autorizatii_taxi/doc/situatia_autorizatiilor_taxi_";
     private static final int DATE_SIZE = 8;
     private static final int PDF_LINK_SIZE = PDF_LINK_BASE.length() + DATE_SIZE + ".pdf".length();
 
@@ -94,7 +95,8 @@ public class MainActivity extends AppCompatActivity
             {
                 if(href.startsWith(PDF_LINK_BASE) && href.length() == PDF_LINK_SIZE)
                 {
-                    String substring = href.substring(PDF_LINK_BASE.length(), DATE_SIZE);
+                    String substring = href.substring(PDF_LINK_BASE.length(),
+                            PDF_LINK_BASE.length() + DATE_SIZE);
                     int date = Integer.parseInt(substring);
                     if(date > latest)
                     {
@@ -113,7 +115,7 @@ public class MainActivity extends AppCompatActivity
             showToast(R.string.could_not_find_links);
             return;
         }
-        loadLink(correctLink);
+        loadLink(PMB_HOME + correctLink);
     }
 
     /**
