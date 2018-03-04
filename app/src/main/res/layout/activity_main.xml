@@ -1,16 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="org.i_chera.taxicheck.MainActivity">
+    tools:context="org.i_chera.taxicheck.MainActivity"
+    android:background="@android:color/holo_orange_light">
 
     <Button
         android:id="@+id/button_update_data"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
         android:text="@string/update_data"/>
+    <EditText
+        android:id="@+id/edit_number"
+        android:layout_width="140dp"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/button_update_data"
+        android:layout_marginTop="40dp"
+        android:text=""
+        android:textAlignment="center"
+        android:maxLength="12"
+        android:textSize="24sp"
+        android:maxLines="1"
+        android:inputType="text"/>
+    <TextView
+        android:id="@+id/status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/fill_in_fields"
+        android:layout_below="@id/edit_number"
+        android:gravity="center"
+        android:textSize="30sp"/>
 
-</android.support.constraint.ConstraintLayout>
+</RelativeLayout>

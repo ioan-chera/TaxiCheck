@@ -6,9 +6,14 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
+import android.text.InputFilter;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.Request;
@@ -23,9 +28,11 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
-public class MainActivity extends AppCompatActivity
+public class MainActivity extends AppCompatActivity implements TextWatcher
 {
     private static final String TAG = "MainActivity";
 
@@ -37,9 +44,18 @@ public class MainActivity extends AppCompatActivity
     private static final int DATE_SIZE = 8;
     private static final int PDF_LINK_SIZE = PDF_LINK_BASE.length() + DATE_SIZE + ".pdf".length();
 
+    private static final String PREF_LATEST_PDF = "latestPdf";
+
+    private static final String DATA_FILE = "data.txt";
+
     private PdfParseTask mPdfTask;
 
     private static boolean sAppStuffInit;
+
+    private TaxiData mData;
+    private Button mButton;
+    private EditText mEditNumber;
+    private TextView mResultView;
 
     /**
      * Initializes per-app settings
@@ -61,17 +77,71 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         initAppStuff(this);
 
+        parseData();
+
         setContentView(R.layout.activity_main);
 
-        Button updateDataButton = findViewById(R.id.button_update_data);
-        updateDataButton.setOnClickListener(new View.OnClickListener()
+        mButton = findViewById(R.id.button_update_data);
+        mButton.setOnClickListener(new View.OnClickListener()
         {
             @Override
             public void onClick(View view)
             {
-                updateData();
+                updateTaxiData();
             }
         });
+
+        mEditNumber = findViewById(R.id.edit_number);
+        mResultView = findViewById(R.id.status);
+
+        mEditNumber.addTextChangedListener(this);
+    }
+
+    @Override
+    public void afterTextChanged(Editable s)
+    {
+        if(mEditNumber == null)
+            return;
+
+
+        if(mData == null)
+        {
+            mResultView.setText(R.string.no_data_available);
+            return;
+        }
+
+        String license = mEditNumber.getText().toString();
+        license = license.toUpperCase().replaceAll("[\\s\\-]+", "");
+        if(!license.matches(TaxiData.LICENSE_PATTERN))
+        {
+            mResultView.setText(R.string.fill_in_fields);
+            return;
+        }
+        int status = mData.getLicenseStatus(license);
+
+        switch(status)
+        {
+            case TaxiData.STATUS_INVALID:
+                mResultView.setText(R.string.license_invalid);
+                break;
+            case TaxiData.STATUS_VALID:
+                mResultView.setText(R.string.license_valid);
+                break;
+            default:
+                mResultView.setText(R.string.license_unregistered);
+                break;
+        }
+
+    }
+
+    @Override
+    public void beforeTextChanged(CharSequence s, int start, int count, int after)
+    {
+    }
+
+    @Override
+    public void onTextChanged(CharSequence s, int start, int before, int count)
+    {
     }
 
     @Override
@@ -146,6 +216,16 @@ public class MainActivity extends AppCompatActivity
             return;
         }
 
+        String savedLink = getPreferences(Context.MODE_PRIVATE).getString(PREF_LATEST_PDF, "");
+        if(correctLink.equals(savedLink))
+        {
+            showToast(R.string.already_loaded);
+            if(parseData())
+                return;
+        }
+
+        getPreferences(Context.MODE_PRIVATE).edit().putString(PREF_LATEST_PDF, correctLink).apply();
+
         String link = PMB_HOME + correctLink;
         if(mPdfTask == null)
             mPdfTask = new PdfParseTask();
@@ -155,8 +235,9 @@ public class MainActivity extends AppCompatActivity
     /**
      * Update the data from the internet.
      */
-    private void updateData()
+    private void updateTaxiData()
     {
+        // Look in the shared preferences
         RequestQueue queue = Volley.newRequestQueue(this);
         StringRequest request = new StringRequest(Request.Method.GET, PMB_WEBSITE, new Response.Listener<String>()
         {
@@ -182,12 +263,17 @@ public class MainActivity extends AppCompatActivity
     private class PdfParseTask extends AsyncTask<String, Void, String>
     {
         @Override
+        protected void onPreExecute()
+        {
+            mButton.setEnabled(false);
+        }
+
+        @Override
         protected String doInBackground(String... params)
         {
             try
             {
-                String result = Utility.parsePdfFromUrl(params[0]);
-                return result;
+                return Utility.parsePdfFromUrl(params[0]);
             }
             catch(IOException e)
             {
@@ -199,10 +285,52 @@ public class MainActivity extends AppCompatActivity
         @Override
         protected void onPostExecute(String result)
         {
-            if(result != null)
-                Log.i(TAG, result);
-            else
-                showToast(R.string.could_not_parse_pdf);
+            mButton.setEnabled(true);
+
+            Log.i(TAG, "PostExecute");
+            FileOutputStream stream = null;
+            try
+            {
+                stream = openFileOutput(DATA_FILE, MODE_PRIVATE);
+                stream.write(result.getBytes());
+            }
+            catch(IOException e)
+            {
+                showToast(R.string.failed_writing);
+            }
+            finally
+            {
+                Utility.close(stream);
+            }
+
+            parseData();
+
+        }
+    }
+
+    /**
+     * Parses the data, putting it in activity's TaxiData.
+     * @return true if it managed to do it.
+     */
+    private boolean parseData()
+    {
+        Log.i(TAG, "Start parse data");
+        FileInputStream stream = null;
+        try
+        {
+            stream = openFileInput(DATA_FILE);
+            mData = new TaxiData(stream);
+            afterTextChanged(null);
+            return true;
+        }
+        catch(IOException e)
+        {
+            return false;
+        }
+        finally
+        {
+            Log.i(TAG, "Stop parse data");
+            Utility.close(stream);
         }
     }
 }

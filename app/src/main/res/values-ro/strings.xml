@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Verificare taxi</string>
+    <string name="update_data">Actualizează datele</string>
+    <string name="could_not_find_links">Nu am găsit datele.</string>
+    <string name="could_not_parse_pdf">Nu am putut decoda PDF-ul.</string>
+    <string name="error_getting_taxi_data">Nu am putut obține datele de taxiuri.</string>
+    <string name="already_loaded">Datele deja încărcate.</string>
+    <string name="failed_writing">N-am reușit să stochez datele.</string>
+    <string name="license_valid">Taxi valid</string>
+    <string name="license_invalid">Taxi înregistrat dar invalid</string>
+    <string name="license_unregistered">Taxi neînregistrat sau ilegal</string>
+    <string name="fill_in_fields">Completați numărul de înmatriculare.</string>
+    <string name="no_data_available">Apăsați pe „Actualizează datele” mai întâi.</string>
+</resources>

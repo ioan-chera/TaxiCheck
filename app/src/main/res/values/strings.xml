@@ -6,4 +6,13 @@
     <string name="could_not_parse_pdf">Could not parse PDF.</string>
     <string name="error_getting_taxi_data">Error getting taxi data.</string>
 
+    <string name="already_loaded">Data already loaded.</string>
+    <string name="failed_writing">Failed writing to data.</string>
+
+    <string name="license_valid">Valid</string>
+    <string name="license_invalid">Invalid</string>
+    <string name="license_unregistered">Invalid or unregistered</string>
+    <string name="fill_in_fields">Please fill in the license number.</string>
+    <string name="no_data_available">Tap \"Update Data\" first.</string>
+
 </resources>
