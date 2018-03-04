@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">TaxiCheck</string>
+    <string name="update_data">Update Data</string>
+
+    <string name="could_not_find_links">Could not find links.</string>
+    <string name="error_getting_taxi_data">Error getting taxi data.</string>
+
 </resources>
