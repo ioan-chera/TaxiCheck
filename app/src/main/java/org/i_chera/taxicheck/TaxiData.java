@@ -24,6 +24,24 @@ class TaxiData
 
     static final String LICENSE_PATTERN = "\\b[A-Z]{1,2}-?[0-9]{2,3}-?[A-Z]{3}\\b";
 
+    private static final Pattern sPattern = Pattern.compile(LICENSE_PATTERN);
+    private static final Pattern sValidity = Pattern.compile("\\bVALIDA\\b");
+
+    /**
+     * Normalizes a license string
+     * @param license the non-formatted string
+     * @return the normalized string
+     */
+    static String normalize(String license)
+    {
+        return license.toUpperCase().replaceAll("[\\s\\-]+", "");
+    }
+
+    /**
+     * Gets info about a license plate.
+     * @param license The license plate, normalized.
+     * @return one of three values
+     */
     int getLicenseStatus(String license)
     {
         Boolean value = mMap.get(license);
@@ -32,24 +50,31 @@ class TaxiData
         return value ? STATUS_VALID : STATUS_INVALID;
     }
 
+    boolean hasData()
+    {
+        return mMap != null && !mMap.isEmpty();
+    }
+
+    /**
+     * Constructs from an input stream file.
+     * @param stream The file to read and parse
+     * @throws IOException if there's error reading file.
+     */
     TaxiData(InputStream stream) throws IOException
     {
         mMap = new HashMap<>();
         String[] lines = Utility.readLinesFromStream(stream);
-
-        Pattern pattern = Pattern.compile(LICENSE_PATTERN);
-        Pattern validity = Pattern.compile("\\bVALIDA\\b");
 
         // Check that it starts with number
         for(String line: lines)
         {
             if(!line.matches("^[0-9]+\\s.*" + LICENSE_PATTERN + ".*$"))
                 continue;
-            Matcher matcher = pattern.matcher(line);
+            Matcher matcher = sPattern.matcher(line);
             if(matcher.find())
             {
                 String key = matcher.group().replaceAll("-", "");
-                boolean value = validity.matcher(line).find();
+                boolean value = sValidity.matcher(line).find();
                 mMap.put(key, value);
             }
         }

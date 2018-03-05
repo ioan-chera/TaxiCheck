@@ -1,13 +1,10 @@
 package org.i_chera.taxicheck;
 
 import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
-import android.text.InputFilter;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
@@ -28,11 +25,10 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 
-public class MainActivity extends AppCompatActivity implements TextWatcher
+public class MainActivity extends AppCompatActivity implements TextWatcher,
+        AppGlobal.TaxiDataChangeListener
 {
     private static final String TAG = "MainActivity";
 
@@ -46,38 +42,26 @@ public class MainActivity extends AppCompatActivity implements TextWatcher
 
     private static final String PREF_LATEST_PDF = "latestPdf";
 
-    private static final String DATA_FILE = "data.txt";
-
     private PdfParseTask mPdfTask;
 
-    private static boolean sAppStuffInit;
-
-    private TaxiData mData;
     private Button mButton;
     private EditText mEditNumber;
     private TextView mResultView;
 
-    /**
-     * Initializes per-app settings
-     */
-    private static void initAppStuff(Context context)
-    {
-        if(sAppStuffInit)
-            return;
-        sAppStuffInit = true;
-    }
+    private AppGlobal mApp;
 
     /**
      * On creation, setup the interface
-     * @param savedInstanceState
+     * @param savedInstanceState saved state
      */
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        initAppStuff(this);
 
-        parseData();
+        mApp = AppGlobal.get();
+        mApp.setListener(this);
+        mApp.processInitialize(this);
 
         setContentView(R.layout.activity_main);
 
@@ -98,26 +82,31 @@ public class MainActivity extends AppCompatActivity implements TextWatcher
     }
 
     @Override
+    public void taxiDataChanged(TaxiData data)
+    {
+        afterTextChanged(null);
+    }
+
+    @Override
     public void afterTextChanged(Editable s)
     {
         if(mEditNumber == null)
             return;
 
-
-        if(mData == null)
+        if(mApp.getData() == null)
         {
             mResultView.setText(R.string.no_data_available);
             return;
         }
 
         String license = mEditNumber.getText().toString();
-        license = license.toUpperCase().replaceAll("[\\s\\-]+", "");
+        license = TaxiData.normalize(license);
         if(!license.matches(TaxiData.LICENSE_PATTERN))
         {
             mResultView.setText(R.string.fill_in_fields);
             return;
         }
-        int status = mData.getLicenseStatus(license);
+        int status = mApp.getData().getLicenseStatus(license);
 
         switch(status)
         {
@@ -154,7 +143,7 @@ public class MainActivity extends AppCompatActivity implements TextWatcher
 
     /**
      * Displays a text message, usually error.
-     * @param message
+     * @param message what to print
      */
     private void showToast(String message)
     {
@@ -167,20 +156,8 @@ public class MainActivity extends AppCompatActivity implements TextWatcher
     }
 
     /**
-     * Reads a PDF from URL
-     * @param url
-     */
-    private void loadLink(String url)
-    {
-        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-        startActivity(intent);
-    }
-
-
-
-    /**
      * Handles HTML cityhall data.
-     * @param response
+     * @param response the obtained text
      */
     private void handleHtmlData(String response)
     {
@@ -220,7 +197,7 @@ public class MainActivity extends AppCompatActivity implements TextWatcher
         if(correctLink.equals(savedLink))
         {
             showToast(R.string.already_loaded);
-            if(parseData())
+            if(mApp.refreshTaxiData(this))
                 return;
         }
 
@@ -285,52 +262,16 @@ public class MainActivity extends AppCompatActivity implements TextWatcher
         @Override
         protected void onPostExecute(String result)
         {
-            mButton.setEnabled(true);
-
-            Log.i(TAG, "PostExecute");
-            FileOutputStream stream = null;
             try
             {
-                stream = openFileOutput(DATA_FILE, MODE_PRIVATE);
-                stream.write(result.getBytes());
+                mButton.setEnabled(true);
+                mApp.saveDataSource(result, MainActivity.this);
+                mApp.refreshTaxiData(MainActivity.this);
             }
             catch(IOException e)
             {
                 showToast(R.string.failed_writing);
             }
-            finally
-            {
-                Utility.close(stream);
-            }
-
-            parseData();
-
-        }
-    }
-
-    /**
-     * Parses the data, putting it in activity's TaxiData.
-     * @return true if it managed to do it.
-     */
-    private boolean parseData()
-    {
-        Log.i(TAG, "Start parse data");
-        FileInputStream stream = null;
-        try
-        {
-            stream = openFileInput(DATA_FILE);
-            mData = new TaxiData(stream);
-            afterTextChanged(null);
-            return true;
-        }
-        catch(IOException e)
-        {
-            return false;
-        }
-        finally
-        {
-            Log.i(TAG, "Stop parse data");
-            Utility.close(stream);
         }
     }
 }
