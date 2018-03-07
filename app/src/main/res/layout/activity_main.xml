@@ -35,5 +35,12 @@
         android:layout_below="@id/edit_number"
         android:gravity="center"
         android:textSize="30sp"/>
+    <TextView
+        android:id="@+id/authorization_no"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/status"
+        android:textSize="20sp"
+        android:gravity="center"/>
 
 </RelativeLayout>

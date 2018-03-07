@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:xliff="rn:oasis:names:tc:xliff:document:1.2">
     <string name="app_name">TaxiCheck</string>
     <string name="update_data">Update Data</string>
 
@@ -14,5 +14,6 @@
     <string name="license_unregistered">Invalid or unregistered</string>
     <string name="fill_in_fields">Please fill in the license number.</string>
     <string name="no_data_available">Tap \"Update Data\" first.</string>
+    <string name="authorization_no">Authorization number: <xliff:g id="number" example="123">%d</xliff:g></string>
 
 </resources>

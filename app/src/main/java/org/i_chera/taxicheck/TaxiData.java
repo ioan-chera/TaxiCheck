@@ -2,7 +2,6 @@ package org.i_chera.taxicheck;
 
 import android.util.Log;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -16,15 +15,30 @@ import java.util.regex.Pattern;
 class TaxiData
 {
     private static final String TAG = "TaxiData";
-    private final HashMap<String, Boolean> mMap;
+
+    static class Entry
+    {
+        final int index;
+        final boolean legal;
+
+        Entry(int inIndex, boolean inLegal)
+        {
+            index = inIndex;
+            legal = inLegal;
+        }
+    }
+
+    private final HashMap<String, Entry> mMap;
 
     static final int STATUS_VALID = 0;
     static final int STATUS_INVALID = 1;
     static final int STATUS_UNREGISTERED = 2;
 
     static final String LICENSE_PATTERN = "\\b[A-Z]{1,2}-?[0-9]{2,3}-?[A-Z]{3}\\b";
+    private static final String INDEX_PATTERN = "^[0-9]+";
 
-    private static final Pattern sPattern = Pattern.compile(LICENSE_PATTERN);
+    private static final Pattern sIndexPattern = Pattern.compile(INDEX_PATTERN);
+    private static final Pattern sLicensePattern = Pattern.compile(LICENSE_PATTERN);
     private static final Pattern sValidity = Pattern.compile("\\bVALIDA\\b");
 
     /**
@@ -44,10 +58,23 @@ class TaxiData
      */
     int getLicenseStatus(String license)
     {
-        Boolean value = mMap.get(license);
+        Entry value = mMap.get(license);
         if(value == null)
             return STATUS_UNREGISTERED;
-        return value ? STATUS_VALID : STATUS_INVALID;
+        return value.legal ? STATUS_VALID : STATUS_INVALID;
+    }
+
+    /**
+     * Returns the index of a license entry.
+     * @param license
+     * @return Integer.MIN_VALUE if not in list.
+     */
+    int getIndex(String license)
+    {
+        Entry value = mMap.get(license);
+        if(value == null)
+            return Integer.MIN_VALUE;
+        return value.index;
     }
 
     boolean hasData()
@@ -68,14 +95,25 @@ class TaxiData
         // Check that it starts with number
         for(String line: lines)
         {
-            if(!line.matches("^[0-9]+\\s.*" + LICENSE_PATTERN + ".*$"))
-                continue;
-            Matcher matcher = sPattern.matcher(line);
-            if(matcher.find())
+            try
             {
-                String key = matcher.group().replaceAll("-", "");
-                boolean value = sValidity.matcher(line).find();
-                mMap.put(key, value);
+               if(!line.matches(INDEX_PATTERN + "\\s.*" + LICENSE_PATTERN + ".*$"))
+                    continue;
+                Matcher licenseMatch = sLicensePattern.matcher(line);
+                Matcher indexMatch = sIndexPattern.matcher(line);
+                if(indexMatch.find() && licenseMatch.find())
+                {
+                    String key = normalize(licenseMatch.group());
+
+                    int index = Integer.parseInt(indexMatch.group());
+                    boolean legal = sValidity.matcher(line).find();
+
+                    mMap.put(key, new Entry(index, legal));
+                }
+            }
+            catch(NumberFormatException e)
+            {
+                Log.w(TAG, "Error parsing number in line: " + line);
             }
         }
     }

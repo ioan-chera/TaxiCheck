@@ -47,6 +47,7 @@ public class MainActivity extends AppCompatActivity implements TextWatcher,
     private Button mButton;
     private EditText mEditNumber;
     private TextView mResultView;
+    private TextView mAuthorizationNumberView;
 
     private AppGlobal mApp;
 
@@ -77,6 +78,7 @@ public class MainActivity extends AppCompatActivity implements TextWatcher,
 
         mEditNumber = findViewById(R.id.edit_number);
         mResultView = findViewById(R.id.status);
+        mAuthorizationNumberView = findViewById(R.id.authorization_no);
 
         mEditNumber.addTextChangedListener(this);
     }
@@ -96,6 +98,7 @@ public class MainActivity extends AppCompatActivity implements TextWatcher,
         if(mApp.getData() == null)
         {
             mResultView.setText(R.string.no_data_available);
+            mAuthorizationNumberView.setText("");
             return;
         }
 
@@ -104,6 +107,7 @@ public class MainActivity extends AppCompatActivity implements TextWatcher,
         if(!license.matches(TaxiData.LICENSE_PATTERN))
         {
             mResultView.setText(R.string.fill_in_fields);
+            mAuthorizationNumberView.setText("");
             return;
         }
         int status = mApp.getData().getLicenseStatus(license);
@@ -111,13 +115,18 @@ public class MainActivity extends AppCompatActivity implements TextWatcher,
         switch(status)
         {
             case TaxiData.STATUS_INVALID:
+                int index = mApp.getData().getIndex(license);
                 mResultView.setText(R.string.license_invalid);
+                mAuthorizationNumberView.setText(getString(R.string.authorization_no, index));
                 break;
             case TaxiData.STATUS_VALID:
+                index = mApp.getData().getIndex(license);
                 mResultView.setText(R.string.license_valid);
+                mAuthorizationNumberView.setText(getString(R.string.authorization_no, index));
                 break;
             default:
                 mResultView.setText(R.string.license_unregistered);
+                mAuthorizationNumberView.setText("");
                 break;
         }
 
