@@ -42,5 +42,12 @@
         android:layout_below="@id/status"
         android:textSize="20sp"
         android:gravity="center"/>
+    <TextView
+        android:id="@+id/car_brand"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/authorization_no"
+        android:textSize="20sp"
+        android:gravity="center"/>
 
 </RelativeLayout>

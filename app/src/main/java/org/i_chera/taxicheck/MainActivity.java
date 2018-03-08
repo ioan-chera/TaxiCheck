@@ -48,6 +48,7 @@ public class MainActivity extends AppCompatActivity implements TextWatcher,
     private EditText mEditNumber;
     private TextView mResultView;
     private TextView mAuthorizationNumberView;
+    private TextView mCarBrandView;
 
     private AppGlobal mApp;
 
@@ -79,8 +80,17 @@ public class MainActivity extends AppCompatActivity implements TextWatcher,
         mEditNumber = findViewById(R.id.edit_number);
         mResultView = findViewById(R.id.status);
         mAuthorizationNumberView = findViewById(R.id.authorization_no);
+        mCarBrandView = findViewById(R.id.car_brand);
 
         mEditNumber.addTextChangedListener(this);
+    }
+
+    @Override
+    protected void onStart()
+    {
+        super.onStart();
+        mEditNumber.requestFocus();
+        Utility.showKeyboard(this);
     }
 
     @Override
@@ -92,6 +102,7 @@ public class MainActivity extends AppCompatActivity implements TextWatcher,
     @Override
     public void afterTextChanged(Editable s)
     {
+        // FIXME: too much repetition here
         if(mEditNumber == null)
             return;
 
@@ -99,6 +110,7 @@ public class MainActivity extends AppCompatActivity implements TextWatcher,
         {
             mResultView.setText(R.string.no_data_available);
             mAuthorizationNumberView.setText("");
+            mCarBrandView.setText("");
             return;
         }
 
@@ -108,6 +120,7 @@ public class MainActivity extends AppCompatActivity implements TextWatcher,
         {
             mResultView.setText(R.string.fill_in_fields);
             mAuthorizationNumberView.setText("");
+            mCarBrandView.setText("");
             return;
         }
         int status = mApp.getData().getLicenseStatus(license);
@@ -116,17 +129,22 @@ public class MainActivity extends AppCompatActivity implements TextWatcher,
         {
             case TaxiData.STATUS_INVALID:
                 int index = mApp.getData().getIndex(license);
+                String car = mApp.getData().getCar(license);
                 mResultView.setText(R.string.license_invalid);
                 mAuthorizationNumberView.setText(getString(R.string.authorization_no, index));
+                mCarBrandView.setText(car);
                 break;
             case TaxiData.STATUS_VALID:
                 index = mApp.getData().getIndex(license);
+                car = mApp.getData().getCar(license);
                 mResultView.setText(R.string.license_valid);
                 mAuthorizationNumberView.setText(getString(R.string.authorization_no, index));
+                mCarBrandView.setText(car);
                 break;
             default:
                 mResultView.setText(R.string.license_unregistered);
                 mAuthorizationNumberView.setText("");
+                mCarBrandView.setText("");
                 break;
         }
 

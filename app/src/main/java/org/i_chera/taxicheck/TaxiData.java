@@ -9,7 +9,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Created by ioan on 04.03.2018.
+ * Holds collected taxi data.
  */
 
 class TaxiData
@@ -20,11 +20,13 @@ class TaxiData
     {
         final int index;
         final boolean legal;
+        final String car;
 
-        Entry(int inIndex, boolean inLegal)
+        Entry(int inIndex, boolean inLegal, String inCar)
         {
             index = inIndex;
             legal = inLegal;
+            car = inCar;
         }
     }
 
@@ -77,6 +79,14 @@ class TaxiData
         return value.index;
     }
 
+    String getCar(String license)
+    {
+        Entry value = mMap.get(license);
+        if(value == null)
+            return "";
+        return value.car;
+    }
+
     boolean hasData()
     {
         return mMap != null && !mMap.isEmpty();
@@ -107,8 +117,9 @@ class TaxiData
 
                     int index = Integer.parseInt(indexMatch.group());
                     boolean legal = sValidity.matcher(line).find();
+                    String car = Utility.toTitleCase(Knowledge.findKnownCar(line));
 
-                    mMap.put(key, new Entry(index, legal));
+                    mMap.put(key, new Entry(index, legal, car));
                 }
             }
             catch(NumberFormatException e)

@@ -1,6 +1,8 @@
 package org.i_chera.taxicheck;
 
+import android.app.Activity;
 import android.util.Log;
+import android.view.WindowManager;
 
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.parser.PdfTextExtractor;
@@ -15,7 +17,7 @@ import java.net.URL;
 import java.util.ArrayList;
 
 /**
- * Created by ioan on 04.03.2018.
+ * Various utility calls
  */
 
 final class Utility
@@ -24,8 +26,8 @@ final class Utility
 
     /**
      * Gets a PDF from URL and parses it. Should not be called from the UI thread.
-     * @param urlString
-     * @return
+     * @param urlString URL where to read PDF
+     * @return The resulting plain text
      */
     static String parsePdfFromUrl(String urlString) throws IOException
     {
@@ -96,6 +98,12 @@ final class Utility
         }
     }
 
+    /**
+     * Reads lines from an InputStream
+     * @param stream The input stream
+     * @return an array of strings, each one being a line
+     * @throws IOException on reading error
+     */
     static String[] readLinesFromStream(InputStream stream) throws IOException
     {
         InputStreamReader streamReader = null;
@@ -119,4 +127,43 @@ final class Utility
             close(streamReader);
         }
     }
+
+    /**
+     * Makes the case of a character to title case.
+     * @param text The text to convert
+     * @return Title Case
+     */
+    static String toTitleCase(String text)
+    {
+        if(text.isEmpty())
+            return "";
+        StringBuilder builder = new StringBuilder(text.length());
+        builder.append(Character.toUpperCase(text.charAt(0)));
+        boolean makeUpper = false;
+        for(int i = 1; i < text.length(); ++i)
+        {
+            char character = text.charAt(i);
+            if(Character.isSpaceChar(character))
+                makeUpper = true;
+            else if(makeUpper)
+            {
+                builder.append(Character.toUpperCase(text.charAt(i)));
+                makeUpper = false;
+            }
+            else
+                builder.append(Character.toLowerCase(text.charAt(i)));
+        }
+        return builder.toString();
+    }
+
+    /**
+     * Convenient method to just show keyboard
+     * @param activity necessary context
+     */
+    static void showKeyboard(Activity activity)
+    {
+        activity.getWindow()
+                .setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+    }
+
 }
