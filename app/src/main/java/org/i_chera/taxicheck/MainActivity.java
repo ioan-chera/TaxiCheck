@@ -20,12 +20,15 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity implements TextWatcher,
         AppGlobal.TaxiDataChangeListener
@@ -264,7 +267,7 @@ public class MainActivity extends AppCompatActivity implements TextWatcher,
     /**
      * Parses the remote PDF
      */
-    private class PdfParseTask extends AsyncTask<String, Void, String>
+    private class PdfParseTask extends AsyncTask<String, Void, JSONObject>
     {
         @Override
         protected void onPreExecute()
@@ -273,31 +276,43 @@ public class MainActivity extends AppCompatActivity implements TextWatcher,
         }
 
         @Override
-        protected String doInBackground(String... params)
+        protected JSONObject doInBackground(String... params)
         {
             try
             {
-                return Utility.parsePdfFromUrl(params[0]);
+                String plainText = Utility.parsePdfFromUrl(params[0]);
+                HashMap<String, TaxiData.Entry> map = TaxiData.hashMapFromPdfText(plainText);
+                JSONObject object = TaxiData.hashMapAsJson(map);
+                return object;
             }
             catch(IOException e)
             {
                 Log.w(TAG, "Error getting PDF: " + e.getMessage());
                 return null;
             }
+            catch(JSONException e)
+            {
+                Log.e(TAG, "Error creating cache file: " + e.getMessage());
+                return null;
+            }
         }
 
         @Override
-        protected void onPostExecute(String result)
+        protected void onPostExecute(JSONObject result)
         {
             try
             {
                 mButton.setEnabled(true);
                 mApp.saveDataSource(result, MainActivity.this);
-                mApp.refreshTaxiData(MainActivity.this);
+                mApp.refreshTaxiData(result);
             }
             catch(IOException e)
             {
                 showToast(R.string.failed_writing);
+            }
+            catch(JSONException e)
+            {
+                showToast(R.string.failed_parsing);
             }
         }
     }

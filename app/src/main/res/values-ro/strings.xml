@@ -13,4 +13,5 @@
     <string name="fill_in_fields">Completați numărul de înmatriculare.</string>
     <string name="no_data_available">Apăsați pe „Actualizează datele” mai întâi.</string>
     <string name="authorization_no">Numărul autorizației: <xliff:g id="number" example="123">%d</xliff:g></string>
+    <string name="failed_parsing">N-am reușit să procesez datele.</string>
 </resources>

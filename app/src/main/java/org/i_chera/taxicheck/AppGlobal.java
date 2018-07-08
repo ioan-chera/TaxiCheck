@@ -3,6 +3,9 @@ package org.i_chera.taxicheck;
 import android.content.Context;
 import android.util.Log;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -13,7 +16,7 @@ import java.io.IOException;
 
 final class AppGlobal
 {
-    private static final String DATA_FILE = "data.txt"; // holds a copy of the taxi file to parse
+    private static final String JSON_FILE = "data.json";    // holds the JSON data
     private static final String TAG = "AppGlobal";      // for logging
 
     private static AppGlobal sInstance; // global instance
@@ -48,14 +51,14 @@ final class AppGlobal
         return mData;
     }
 
-    void saveDataSource(String result, Context context) throws IOException
+    void saveDataSource(JSONObject result, Context context) throws IOException
     {
         Log.i(TAG, "PostExecute");
         FileOutputStream stream = null;
         try
         {
-            stream = context.openFileOutput(DATA_FILE, Context.MODE_PRIVATE);
-            stream.write(result.getBytes());
+            stream = context.openFileOutput(JSON_FILE, Context.MODE_PRIVATE);
+            stream.write(result.toString().getBytes());
         }
         finally
         {
@@ -73,7 +76,7 @@ final class AppGlobal
         FileInputStream stream = null;
         try
         {
-            stream = context.openFileInput(DATA_FILE);
+            stream = context.openFileInput(JSON_FILE);
             mData = new TaxiData(stream);
             if(mListener != null)
                 mListener.taxiDataChanged(mData);
@@ -83,11 +86,23 @@ final class AppGlobal
         {
             return false;
         }
+        catch(JSONException e)
+        {
+            return false;
+        }
         finally
         {
             Log.i(TAG, "Stop parse data");
             Utility.close(stream);
         }
+    }
+
+    void refreshTaxiData(JSONObject object) throws JSONException
+    {
+        Log.i(TAG, "Start JSON read data");
+        mData = new TaxiData(object);
+        if(mListener != null)
+            mListener.taxiDataChanged(mData);
     }
 
     /**

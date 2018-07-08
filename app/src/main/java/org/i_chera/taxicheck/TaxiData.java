@@ -2,9 +2,13 @@ package org.i_chera.taxicheck;
 
 import android.util.Log;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -27,6 +31,32 @@ class TaxiData
             index = inIndex;
             legal = inLegal;
             car = inCar;
+        }
+
+        /**
+         * Return from JSON representation
+         * @param object
+         * @throws JSONException
+         */
+        Entry(JSONObject object) throws JSONException
+        {
+            index = object.getInt("index");
+            legal = object.getBoolean("legal");
+            car = object.getString("car");
+        }
+
+        /**
+         * Gets JSON representation
+         * @return
+         * @throws JSONException
+         */
+        JSONObject asJsonObject() throws JSONException
+        {
+            JSONObject object = new JSONObject();
+            object.put("index", index);
+            object.put("legal", legal);
+            object.put("car", car);
+            return object;
         }
     }
 
@@ -97,17 +127,49 @@ class TaxiData
      * @param stream The file to read and parse
      * @throws IOException if there's error reading file.
      */
-    TaxiData(InputStream stream) throws IOException
+    TaxiData(InputStream stream) throws IOException, JSONException
+    {
+        this(new JSONObject(Utility.convertStreamToString(stream)));
+    }
+
+    /**
+     * Constructs from a given JSON set
+     * @param object
+     */
+    TaxiData(JSONObject object) throws JSONException
     {
         mMap = new HashMap<>();
-        String[] lines = Utility.readLinesFromStream(stream);
+        Iterator<String> keys = object.keys();
+        while(keys.hasNext())
+        {
+            String key = keys.next();
+            mMap.put(key, new Entry(object.getJSONObject(key)));
+        }
+    }
 
-        // Check that it starts with number
+    /**
+     * Gets the hash map from a PDF text
+     * @param text
+     * @return
+     */
+    static HashMap<String, Entry> hashMapFromPdfText(String text)
+    {
+        return hashMapFromPdfText(text.split("\\r?\\n"));
+    }
+
+    /**
+     * Main part
+     * @param lines
+     * @return
+     */
+    private static HashMap<String, Entry> hashMapFromPdfText(String[] lines)
+    {
+        HashMap<String, Entry> map = new HashMap<>();
         for(String line: lines)
         {
             try
             {
-               if(!line.matches(INDEX_PATTERN + "\\s.*" + LICENSE_PATTERN + ".*$"))
+                if(!line.matches(INDEX_PATTERN + "\\s.*" + LICENSE_PATTERN + ".*$"))
                     continue;
                 Matcher licenseMatch = sLicensePattern.matcher(line);
                 Matcher indexMatch = sIndexPattern.matcher(line);
@@ -119,7 +181,7 @@ class TaxiData
                     boolean legal = sValidity.matcher(line).find();
                     String car = Utility.toTitleCase(Knowledge.findKnownCar(line));
 
-                    mMap.put(key, new Entry(index, legal, car));
+                    map.put(key, new Entry(index, legal, car));
                 }
             }
             catch(NumberFormatException e)
@@ -127,5 +189,23 @@ class TaxiData
                 Log.w(TAG, "Error parsing number in line: " + line);
             }
         }
+        return map;
+    }
+
+    /**
+     * Get JSON of hashmap
+     * @param map
+     * @return
+     * @throws JSONException
+     */
+    static JSONObject hashMapAsJson(HashMap<String, Entry> map) throws JSONException
+    {
+        JSONObject object = new JSONObject();
+        for(HashMap.Entry<String, Entry> entry : map.entrySet())
+        {
+            JSONObject entryObject = entry.getValue().asJsonObject();
+            object.put(entry.getKey(), entryObject);
+        }
+        return object;
     }
 }

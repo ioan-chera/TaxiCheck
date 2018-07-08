@@ -15,5 +15,6 @@
     <string name="fill_in_fields">Please fill in the license number.</string>
     <string name="no_data_available">Tap \"Update Data\" first.</string>
     <string name="authorization_no">Authorization number: <xliff:g id="number" example="123">%d</xliff:g></string>
+    <string name="failed_parsing">Failed processing taxi data.</string>
 
 </resources>
